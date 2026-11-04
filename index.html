@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Chat with Buddy</title>
+<link rel="icon" href="data:,">
+<style>
+:root{color-scheme:dark;font-family:system-ui,sans-serif;background:#0c1421;color:#ecf4ff}*{box-sizing:border-box}body{margin:0;padding:24px 16px 36px;background:radial-gradient(ellipse at top,#1b3349,transparent 65%);min-height:100dvh}main{max-width:760px;margin:auto}header{display:flex;align-items:center;justify-content:space-between;gap:16px}h1{font-size:26px;margin:0 0 5px}p{line-height:1.55}.sub{color:#a9bfd2;font-size:14px;margin:0}.badge{font-size:12px;border:1px solid #36576c;border-radius:24px;padding:7px 11px;white-space:nowrap;color:#a7e7cc}.hero{display:flex;align-items:center;gap:22px;padding:24px;margin:24px 0;background:#142333;border:1px solid #2c4358;border-radius:20px}.face{width:100px;height:68px;flex-shrink:0;background:#050e16;border:1px solid #44647b;border-radius:15px;display:flex;justify-content:center;align-items:center;gap:15px}.eye{width:17px;height:27px;background:#89e6e0;border-radius:8px;transition:all .25s}.face[data-mood="thinking"] .eye{animation:think 1.1s ease-in-out infinite}.face[data-mood="sad"] .eye{height:12px;transform:rotate(17deg)}.face[data-mood="sad"] .eye:last-child{transform:rotate(-17deg)}.face[data-mood="happy"] .eye,.face[data-mood="joking"] .eye{height:13px;border-radius:15px 15px 4px 4px}.face[data-mood="angry"] .eye{transform:rotate(-20deg)}.face[data-mood="angry"] .eye:last-child{transform:rotate(20deg)}.face[data-mood="curious"] .eye:last-child{height:16px}.face[data-mood="sleepy"] .eye{height:5px}@keyframes think{50%{transform:translate(7px,-5px);height:18px}}h2{font-size:17px;margin:0 0 5px}.hero p{font-size:13px;color:#abc0d2;margin:0}.log{display:flex;flex-direction:column;gap:14px;min-height:170px;max-height:53dvh;overflow-y:auto;padding:4px 2px 18px}.bubble{max-width:92%;padding:14px 17px;border-radius:17px;background:#182b3d;border:1px solid #2c455a;white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.55}.bubble.you{align-self:flex-end;background:#234753;border-color:#326575}.speaker{display:block;font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:#a0c4d1;margin-bottom:6px}.notice{min-height:22px;font-size:13px;color:#ffd09d;white-space:pre-wrap}form{display:flex;align-items:flex-end;gap:10px;margin-top:8px}textarea{width:100%;resize:vertical;min-height:65px;max-height:180px;border:1px solid #3b5b70;border-radius:14px;background:#101f2e;color:#edf7ff;padding:13px;font:inherit;font-size:16px}textarea:focus{outline:2px solid #79d6ce;outline-offset:2px}button{cursor:pointer;border:0;border-radius:13px;padding:14px 19px;background:#8ae3d4;color:#0a252b;font:inherit;font-weight:650;min-height:48px}button:disabled{opacity:.45;cursor:default}.tools{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:12px}.secondary{background:transparent;border:1px solid #37566a;color:#b7cfdf;font-size:12px;padding:9px 13px;min-height:38px}.hint{color:#8fa9bf;font-size:12px}.foot{margin-top:26px;color:#8fa9bf;font-size:12px}@media(max-width:480px){body{padding-top:18px}header{align-items:flex-start;flex-direction:column;gap:10px}.hero{padding:17px;gap:15px}.face{width:84px}button{padding:14px}.tools{align-items:flex-start}.log{max-height:45dvh}}@media(prefers-reduced-motion:reduce){.eye{animation:none!important;transition:none}}
+.voice-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:12px 0}.voice-row select{background:#142333;color:#ecf4ff;border:1px solid #37566a;border-radius:10px;padding:10px;font:inherit}#talk{touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}#talk[aria-pressed="true"]{background:#f5c194}#voiceStatus{font-size:12px;color:#acc6d6}.voice-setup{border:1px solid #37566a;border-radius:14px;padding:15px;margin:14px 0;font-size:13px;color:#b7cbdc}.voice-setup h2{color:#ecf4ff}.voice-setup a{color:#8ae3d4}.voice-setup ol{padding-left:20px;line-height:1.7}.fingerprint{overflow-wrap:anywhere;font-size:11px}label.voice-label{font-size:12px;color:#b7cbdc}input[readonly],textarea[readonly]{opacity:.8}
+.cloud-form{display:grid;grid-template-columns:1fr 1fr;align-items:end}.cloud-form label{display:flex;flex-direction:column;gap:5px;min-width:0}.cloud-form input{width:100%;box-sizing:border-box;padding:11px;border:1px solid #37566a;border-radius:10px;background:#101f2e;color:#edf7ff;font:inherit;font-size:16px}.cloud-form button{width:fit-content}@media(max-width:480px){.cloud-form{grid-template-columns:1fr}}
+</style></head><body><main>
+<header><div><h1>Chat with Buddy</h1><p class="sub">A little companion. A curious mind.</p></div><span class="badge" id="connection">Connecting…</span></header>
+<section class="voice-setup" id="cloudSetup"><h2>Connect your Buddy</h2>
+<p>Use the connection you created for Buddy. Your password stays in this open page.</p>
+<form id="cloudForm" class="cloud-form">
+<label>Broker address<input id="cloudHost" required value="sdb7211d.ala.us-east-1.emqxsl.com" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+<label>Buddy ID<input id="cloudDevice" required value="mous-buddy" pattern="[a-z0-9][a-z0-9-]{0,31}" autocomplete="off" autocapitalize="none"></label>
+<label>Username<input id="cloudUser" required value="buddy-phone" autocomplete="username" autocapitalize="none" spellcheck="false"></label>
+<label>Password<input id="cloudPassword" required type="password" autocomplete="current-password"></label>
+<button type="submit" id="cloudConnect">Connect</button><button type="button" id="cloudDisconnect" class="secondary" hidden>Disconnect</button>
+</form><p id="cloudNotice" role="status">Connect once, then hold the voice button to speak.</p>
+<p class="hint">No Gemini API key belongs here. Keep EMQX Serverless spending limit at zero.</p></section><section class="hero"><div class="face" id="face" data-mood="neutral" aria-hidden="true"><i class="eye"></i><i class="eye"></i></div><div><h2 id="activity">Hello there.</h2><p id="activity_detail">Ask a question, share your day, or set a timer.</p></div></section>
+<div id="log" class="log" role="log" aria-live="polite" aria-label="Conversation"></div>
+<div id="notice" class="notice" role="status"></div>
+<form id="form"><label for="message" hidden>Message Buddy</label><textarea id="message" maxlength="400" rows="2" placeholder="Message Buddy…" required></textarea><button id="send" type="submit" disabled>Send</button></form>
+<div class="voice-row"><button id="talk" type="button" aria-pressed="false" disabled>Hold to talk</button><label class="voice-label" for="voiceLanguage">Voice language</label><select id="voiceLanguage"><option value="en-US">English</option><option value="fil-PH">Filipino</option></select></div>
+<p id="voiceStatus" role="status">Release to send automatically. Escape cancels.</p>
+<section id="voiceSetup" class="voice-setup" hidden><h2>Voice on your iPhone</h2><p id="voiceSetupText">Checking secure voice setup…</p><div id="voiceSetupSteps" hidden><ol><li><a href="/buddy.mobileconfig">Download the Buddy certificate profile</a>.</li><li>Open iPhone Settings → Profile Downloaded → Install.</li><li>Settings → General → About → Certificate Trust Settings: enable Desk Buddy Local CA.</li></ol><p>Compare the certificate fingerprint with the one shown by the setup script before trusting it.</p><p id="voiceFingerprint" class="fingerprint"></p><a id="secureVoiceLink">Open secure Buddy</a></div></section>
+<div class="tools"><span class="hint">Enter to send · Shift+Enter for a new line</span><button class="secondary" id="clear" disabled>New conversation</button></div>
+<p class="foot">This dashboard connects through your private cloud broker. Buddy talks directly to Gemini over Wi-Fi. Your laptop can stay off. The last four exchanges are remembered until you clear them or restart Buddy. Hold the voice button to speak, then release to send. Buddy's own microphone and speaker come later.</p>
+</main><script src="/mqtt.min.js"></script><script src="/cloud-transport.js"></script><script src="/cloud-setup.js"></script><script>
+'use strict';
+// BUDDY_PTT_BEGIN
+class BuddyTalkController {
+  constructor(options){this.options=options;this.current=null;}
+  isBusy(){return this.current!==null;}
+  state(value){this.options.onState?.(value);}
+  text(session,finalOnly=false){return session.results.filter(item=>!finalOnly||item.final).map(item=>item.text.trim()).filter(Boolean).join(' ').trim();}
+  start(language){
+    if(this.current||!this.options.canStart())return false;
+    const session={held:true,started:false,ended:false,sent:false,results:[]};
+    this.current=session;
+    try{
+      const recognition=new this.options.Recognition();session.recognition=recognition;
+      recognition.lang=language||'en-US';recognition.continuous=true;recognition.interimResults=true;recognition.maxAlternatives=1;
+      recognition.onstart=()=>{
+        if(this.current!==session||!session.held){try{recognition.abort();}catch{}return;}
+        session.started=true;clearTimeout(session.startTimer);this.state('listening');
+        session.holdTimer=setTimeout(()=>this.cancel('Voice reached its 30-second limit. Shorten the captured words and send them manually.'),30000);
+      };
+      recognition.onresult=event=>{
+        if(this.current!==session)return;
+        session.results=[];
+        for(let i=0;i<event.results.length;i++){
+          const result=event.results[i],text=result?.[0]?.transcript;
+          if(typeof text==='string')session.results.push({text,final:!!result.isFinal});
+        }
+        this.options.onText?.(this.text(session));
+      };
+      recognition.onerror=event=>{
+        if(this.current!==session)return;
+        const errors={'not-allowed':'Speech access was blocked. Allow microphone/speech recognition for this page in Safari.',
+          'service-not-allowed':'Speech recognition is unavailable. Check Siri and Dictation settings.',
+          'audio-capture':'The microphone could not be opened. Check whether another app is using it.',
+          'no-speech':'No speech was detected. Hold the button and try again.',
+          'network':'The phone speech service could not connect. Check its internet connection.',
+          'language-not-supported':'This phone does not support that voice language. Try English or keyboard dictation.'};
+        this.cancel(errors[event.error]||'Speech recognition stopped. Your captured words were kept for editing.');
+      };
+      recognition.onend=()=>{
+        if(this.current!==session)return;
+        session.ended=true;clearTimeout(session.holdTimer);
+        if(!session.held)this.finish(session);else this.state('captured');
+      };
+      this.state('requesting');
+      session.startTimer=setTimeout(()=>this.cancel('Speech did not start. Check Safari speech permission, then hold again.'),15000);
+      recognition.start();return true;
+    }catch{this.cancel('Speech recognition could not start in this browser.');return false;}
+  }
+  release(){
+    const session=this.current;if(!session||!session.held)return;
+    session.held=false;clearTimeout(session.startTimer);clearTimeout(session.holdTimer);
+    if(!session.started){this.cancel('After allowing speech access, hold the button again to speak.');return;}
+    this.state('finalizing');
+    if(session.ended){this.finish(session);return;}
+    session.endTimer=setTimeout(()=>this.cancel('The phone did not finish recognizing the words. Review the captured text and send it manually.'),5000);
+    try{session.recognition.stop();}catch{this.cancel('Speech could not finish. Captured words were kept for editing.');}
+  }
+  finish(session){
+    if(this.current!==session||session.held||session.sent)return;
+    const text=this.text(session,true);session.sent=true;
+    this.cleanup(session);this.current=null;this.state('idle');
+    if(!text){this.options.onError?.('No completed speech was recognized. Try again or use the message box.');return;}
+    this.options.onText?.(text);this.options.onSend?.(text);
+  }
+  cleanup(session){clearTimeout(session.startTimer);clearTimeout(session.holdTimer);clearTimeout(session.endTimer);}
+  cancel(message='Voice cancelled. Nothing was sent.'){
+    const session=this.current;if(!session)return;
+    this.current=null;this.cleanup(session);
+    try{session.recognition?.abort();}catch{}
+    this.state('idle');this.options.onError?.(message);
+  }
+}
+function bindBuddyTalkButton(button,controller,language,root=globalThis){
+  let active=null;
+  function cancel(){if(active){active=null;controller.cancel();}else if(controller.isBusy())controller.cancel();button.setAttribute('aria-pressed','false');}
+  function release(){if(!active)return;active=null;button.setAttribute('aria-pressed','false');controller.release();}
+  button.addEventListener('pointerdown',event=>{
+    if(button.disabled||active||event.button!==0)return;event.preventDefault();
+    if(controller.start(language())){active={pointer:event.pointerId};button.setAttribute('aria-pressed','true');try{button.setPointerCapture(event.pointerId);}catch{}}
+  });
+  root.addEventListener('pointerup',event=>{if(active?.pointer===event.pointerId)release();});
+  root.addEventListener('pointercancel',event=>{if(active?.pointer===event.pointerId)cancel();});
+  button.addEventListener('lostpointercapture',event=>{if(active?.pointer===event.pointerId)cancel();});
+  button.addEventListener('keydown',event=>{
+    if(![' ','Enter'].includes(event.key)||event.repeat||button.disabled||active)return;event.preventDefault();
+    if(controller.start(language())){active={key:event.key};button.setAttribute('aria-pressed','true');}
+  });
+  root.addEventListener('keyup',event=>{if(active?.key===event.key){event.preventDefault();release();}});
+  root.addEventListener('keydown',event=>{if(event.key==='Escape')cancel();});
+  root.addEventListener('blur',cancel);
+  root.document.addEventListener('visibilitychange',()=>{if(root.document.hidden)cancel();});
+  button.addEventListener('click',event=>event.preventDefault());
+  button.addEventListener('contextmenu',event=>event.preventDefault());
+  return cancel;
+}
+// BUDDY_PTT_END
+const byId=id=>document.getElementById(id);
+const log=byId('log'), input=byId('message'), send=byId('send'), clear=byId('clear'), notice=byId('notice');
+let busy=false, reachable=false, available=false, shownId=0, questionId=0, polling=false, sending=false, acceptedId=0, bootId=null, pollTimer;
+let draft=null,draftId=0;
+let voice=null;
+const Recognition=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
+const voiceAvailable=globalThis.isSecureContext===true&&typeof Recognition==='function';
+function bubble(name,text,kind=''){const box=document.createElement('div');box.className='bubble '+kind;const label=document.createElement('span');label.className='speaker';label.textContent=name;const body=document.createElement('span');body.textContent=text;box.append(label,body);log.append(box);while(log.children.length>40)log.firstElementChild.remove();log.scrollTop=log.scrollHeight;return{box,body};}
+function discardDraft(){if(draft)draft.box.remove();draft=null;draftId=0;}
+function controls(){const capturing=voice?.isBusy()||false;send.disabled=!reachable||!available||busy||sending||capturing;clear.disabled=send.disabled;
+  byId('talk').disabled=!voiceAvailable||!reachable||!available||busy||sending||(!capturing&&!!input.value.trim());
+  byId('voiceLanguage').disabled=capturing||busy||sending;input.readOnly=capturing;}
+async function request(path,body){if(globalThis.buddyCloudTransport)return globalThis.buddyCloudTransport.request(path,body);const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),7000);try{const options={cache:'no-store',signal:controller.signal};if(body){options.method='POST';options.headers={'Content-Type':'application/json','X-Buddy-Request':'1'};options.body=JSON.stringify(body);}const r=await fetch(path,options);let data;try{data=await r.json();}catch{throw Error('Buddy returned an unreadable response.');}if(!r.ok||data.ok===false&&body)throw Error(data.error||'Buddy could not accept that request.');return data;}finally{clearTimeout(timer);}}
+async function poll(){
+  if(polling)return;
+  clearTimeout(pollTimer);polling=true;
+  try{
+    const s=await request('/api/chat');
+    if(bootId!==null&&bootId!==s.boot_id){
+      voice?.cancel('Buddy restarted. Nothing was sent.');shownId=questionId=acceptedId=0;discardDraft();log.replaceChildren();
+      notice.textContent='Buddy restarted. Recent context was cleared.';
+    }
+    bootId=s.boot_id;
+    if(s.id<acceptedId)return;
+    reachable=true;available=!!s.configured&&!!s.available;busy=!!s.busy;
+    byId('connection').textContent=available?'Connected to Buddy':'Setup needed';
+    const phases={queued:'Getting ready…',connecting:'Connecting to Gemini…',waiting:'Thinking it through…',tools:'Working on that…',replying:'Buddy is replying…'};
+    byId('activity').textContent=busy?(phases[s.phase]||'Thinking it through…'):available?'Ready when you are.':'Gemini setup needed';
+    byId('activity_detail').textContent=busy?`${Math.max(0,s.elapsed_seconds||0)}s elapsed · Your answer appears as it arrives.`:'Ask a question, share your day, or set a timer.';
+    byId('face').dataset.mood=busy&&!s.draft?'thinking':s.expression||'neutral';
+    if(s.question&&s.id!==questionId){bubble('You',s.question,'you');questionId=s.id;}
+    if(s.busy&&s.draft){
+      if(draftId!==s.id){discardDraft();draft=bubble('Buddy',s.draft);draftId=s.id;}
+      else draft.body.textContent=s.draft;
+      log.scrollTop=log.scrollHeight;
+    }
+    if(s.id&&!s.busy&&s.id!==shownId){
+      if(!s.question){discardDraft();log.replaceChildren();notice.textContent='A fresh conversation. Recent context has been cleared.';}
+      else if(s.error)notice.textContent=s.error+(s.confirmed_actions?' Completed actions: '+s.confirmed_actions+'. Check the timer/reminders before retrying.':'');
+      else if(s.truncated)notice.textContent='The reply reached Buddy’s text limit. Ask for a shorter answer or a specific detail.';
+      else notice.textContent=s.confirmed_actions?'Device confirmed: '+s.confirmed_actions:'';
+      if(s.reply){
+        if(draft&&draftId===s.id){draft.body.textContent=s.reply;draft=null;draftId=0;}
+        else{discardDraft();bubble('Buddy',s.reply);}
+      }else discardDraft();
+      shownId=s.id;
+    }
+    if(!available)notice.textContent='Configure Gemini on the ESP32 using gemini-device-setup.ps1, then upload the firmware.';
+  }catch(e){
+    reachable=false;voice?.cancel('Connection to Buddy was lost. Nothing was sent.');byId('connection').textContent='Reconnecting…';byId('activity').textContent='Looking for Buddy…';
+    notice.textContent=(globalThis.buddyCloudTransport?'':'Keep this device on the same Wi-Fi as Buddy. ')+(e.name==='AbortError'?'Connection timed out.':e.message);
+  }finally{
+    polling=false;controls();pollTimer=setTimeout(poll,document.hidden?10000:busy?900:5000);
+  }
+}
+byId('form').addEventListener('submit',async event=>{
+  event.preventDefault();if(send.disabled)return;
+  const message=input.value.trim();if(!message)return;
+  if(new TextEncoder().encode(message).length>400){
+    notice.textContent='Please shorten the message to 400 bytes (Filipino accents and emoji may use more than one byte).';return;
+  }
+  sending=true;controls();notice.textContent='';
+  try{
+    const r=await request('/api/chat',{message});acceptedId=r.id;input.value='';busy=true;
+    byId('face').dataset.mood='thinking';byId('activity').textContent='Thinking it through…';await poll();
+  }catch(e){
+    // A lost acknowledgement may still have queued a request. Refresh status before allowing another send.
+    reachable=false;
+    notice.textContent=e.name==='AbortError'?'Sending timed out. Wait for Buddy’s status before sending again.':e.message;
+  }finally{sending=false;controls();}
+});
+input.addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();if(!send.disabled)byId('form').requestSubmit();}});
+clear.addEventListener('click',async()=>{
+  if(clear.disabled)return;sending=true;controls();
+  try{
+    const r=await request('/api/chat',{clear:true});shownId=questionId=acceptedId=r.id;discardDraft();log.replaceChildren();
+    notice.textContent='A fresh conversation. Recent context has been cleared.';byId('face').dataset.mood='neutral';
+  }catch(e){reachable=false;notice.textContent=e.message;}
+  finally{sending=false;controls();}
+});
+input.addEventListener('input',controls);
+if(voiceAvailable){
+  voice=new BuddyTalkController({Recognition,
+    canStart:()=>reachable&&available&&!busy&&!sending&&!input.value.trim()&&!document.hidden,
+    onText:text=>{input.value=text;},
+    onState:state=>{
+      const labels={idle:'Hold to talk',requesting:'Allow speech access…',listening:'Release to send',captured:'Release to send',finalizing:'Finishing words…'};
+      byId('talk').textContent=labels[state]||'Hold to talk';
+      byId('voiceStatus').textContent=state==='listening'?'Listening. Release when done; your words send automatically.':state==='captured'?'Speech captured. Release to send.':state==='finalizing'?'Finishing the last words…':state==='requesting'?'Allow speech access if asked, then hold again.':'Release to send automatically. Escape cancels.';
+      controls();
+    },
+    onSend:text=>{
+      input.value=text;controls();
+      if(!reachable||!available||busy||sending){notice.textContent='Words captured. Wait for Buddy, then tap Send.';return;}
+      byId('form').requestSubmit();
+    },
+    onError:message=>{byId('voiceStatus').textContent=message;controls();}
+  });
+  bindBuddyTalkButton(byId('talk'),voice,()=>byId('voiceLanguage').value);
+}else{
+  byId('voiceStatus').textContent=globalThis.isSecureContext?'This browser has no speech recognition. Try Safari with Siri/Dictation enabled, or use keyboard dictation.':'Hold-to-talk needs the trusted HTTPS page. Use Voice setup below.';
+}
+async function showVoiceSetup(){
+  if(globalThis.isSecureContext)return;
+  byId('voiceSetup').hidden=false;
+  try{
+    const setup=await request('/api/voice-setup');
+    if(!setup.configured){byId('voiceSetupText').textContent='Run the one-time Buddy HTTPS setup on your laptop, upload, then return here. The laptop can stay off during daily use.';return;}
+    if(!setup.ready){byId('voiceSetupText').textContent=setup.certificate_ip!==setup.current_ip?'Buddy’s address changed. Run HTTPS setup again with the current address shown on the OLED.':'Buddy’s secure page could not start. Check the serial log before using voice.';return;}
+    byId('voiceSetupText').textContent='Install and trust your own Buddy certificate once, then use the secure page for voice.';
+    byId('voiceSetupSteps').hidden=false;byId('voiceFingerprint').textContent='Root SHA-256: '+setup.root_sha256;
+    const link=byId('secureVoiceLink');link.href='https://'+setup.current_ip+'/';
+    link.textContent='Open secure Buddy';
+  }catch{byId('voiceSetupText').textContent='Voice setup is not available yet. Upload the new firmware and refresh this page.';}
+}
+globalThis.addEventListener?.('buddy-cloud-ready',()=>poll());
+showVoiceSetup();
+poll();
+</script></body></html>
