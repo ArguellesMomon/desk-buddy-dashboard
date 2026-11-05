@@ -1,9 +1,48 @@
-# Buddy dashboard · Web 5.0
+# Buddy dashboard · Web 5.1
 
 A static Vercel dashboard for a personal ESP32 Buddy. Landing, connection and
 chat are separate routes. Settings holds connection details, voice preferences,
 About, FAQs, disconnect and forget. Web 5.0 changes the visual experience;
-firmware remains 4.8. No firmware upload is required for this dashboard redesign.
+firmware remains 4.8. Web 5.1 adds safer dictation and drag-away cancellation.
+No firmware upload is required for these dashboard updates.
+
+## Dictation (5.1)
+
+The browser/phone supplies speech recognition; this update does not replace
+Safari's engine or guarantee word accuracy. English remains en-US. A language
+shortcut beside the microphone opens Voice & preferences. The optional Review
+dictation before sending setting is recommended for frequently misheard phrases:
+release fills the editable composer; Send submits it. The default keeps the
+existing release-to-send preference for complete results. Interim words, early
+recognition stops, reported low confidence, and over-budget messages require
+review instead of sending a silently shortened sentence.
+
+The recognizer requests up to three alternatives. When available during review,
+whole-message interpretations can be selected without sending them. The top
+choice is never automatically replaced: "Let's play it again" and "Explain it
+again" can both be intentional. Confidence is only a browser estimate; absent,
+zero or placeholder scores are not reliable certainty signals. A final result
+can still be wrong. Experimental phrase-biasing APIs are not forced on Safari;
+these controls do not claim to retrain or upgrade its recognition model.
+
+Hold until Listening appears before speaking. Drag more than 12 CSS pixels
+beyond the microphone button's edge to cancel; release outside also cancels.
+Cancellation stops recognition, clears that recording's draft, releases the
+pressed state and never sends, even if a late final result arrives or the
+finger returns. Escape/system pointer cancellation also discard that recording.
+Navigation, network errors and timeouts keep captured words editable, without
+auto-send. No raw audio is retained by the dashboard or sent to a new provider;
+the browser speech service's own processing still applies. No Gemini quota or
+API key is needed for these controls.
+
+`node tests/voice.cjs` covers final/interim assembly, retracted suffixes,
+alternatives, confidence/review, early end/errors, timeout, UTF-8 budget,
+single send, drag-away/capture loss and late events. Integration tests additionally
+check persistent preferences, safe alternative rendering and manual-send flow;
+isolated browser tests cover real pointer capture and narrow/short viewports.
+These are functional tests with synthetic recognition events, not an acoustic
+accuracy benchmark. The user's actual iPhone audio remains a real-device test.
+API reference: https://webaudio.github.io/web-speech-api/
 
 ## Design direction
 

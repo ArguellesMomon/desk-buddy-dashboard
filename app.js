@@ -10,6 +10,13 @@ let reviewId=null,lastSoundKey='',lastReplyAt=0,lastUserActivity=Date.now();
 const relay=new BuddyRelayTransport({mqtt:globalThis.mqtt,onConnection:updateConnection,ready:()=>{if(relay.state)renderState(relay.state);updateControls();}});
 globalThis.buddyApp={relay,store,learning,chirps};
 function notice(text=''){ $('chatNotice').textContent=text;$('chatNotice').hidden=!text; }
+function clearVoiceReview(){ $('voiceReview').hidden=true;$('voiceChoices').replaceChildren();$('voiceAlternatives').hidden=true;$('voiceAlternatives').open=false; }
+function voiceLanguageName(){return $('voiceLanguage').selectedOptions[0]?.textContent||'English';}
+function updateVoicePreference(){
+  $('voiceLanguageShortcut').textContent=voiceLanguageName();
+  $('voiceLanguageShortcut').setAttribute('aria-label','Dictation language: '+voiceLanguageName()+'. Change voice settings');
+  $('voiceLanguageShortcut').title=$('reviewVoice').checked?'Review dictation before sending':'Send complete dictation on release';
+}
 function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4000);}
 function navigate(path,replace=false){
   path=['/connect','/chat'].includes(path)?path:'/';
@@ -29,6 +36,7 @@ function updateControls(){
   $('message').readOnly=capturing;
   $('talk').disabled=!voice||!ready||busy||sending||(!capturing&&!!$('message').value.trim());
   $('voiceLanguage').disabled=capturing;
+  $('reviewVoice').disabled=capturing;$('voiceLanguageShortcut').disabled=capturing;
   $('newConversation').disabled=!ready||busy||sending||capturing;
   $('disconnect').disabled=!activeSettings;
   $('forget').disabled=!activeSettings&&!saved&&!remembered;
@@ -107,7 +115,7 @@ function openSettings(panel='home'){
 }
 function closeSettings(){$('settings').close();}
 function scrollConversation(){const log=$('conversation');log.scrollTop=log.scrollHeight;}
-function clearRows(){for(const node of [...$('conversation').children])if(node!==$('emptyChat'))node.remove();rows.clear();pendingSend=null;unconfirmed=null;$('emptyChat').hidden=false;}
+function clearRows(){for(const node of [...$('conversation').children])if(node!==$('emptyChat'))node.remove();rows.clear();pendingSend=null;unconfirmed=null;$('emptyChat').hidden=false;clearVoiceReview();}
 function messageNode(kind,text=''){
   $('emptyChat').hidden=true;const box=document.createElement('article');box.className='message '+kind;
   const label=document.createElement('span');label.className='message-label';
@@ -181,6 +189,7 @@ function renderState(state){
 async function sendMessage(text){
   text=text.trim();if(!text||sending||relay.status.code!=='ready'||relay.state?.busy||accepted>(relay.state?.id??0))return;
   if(new TextEncoder().encode(text).length>400){notice('A little shorter, please — up to 400 bytes.');return;}
+  clearVoiceReview();
   lastUserActivity=Date.now();notice();sending=true;const entry={user:messageNode('user',text),buddy:messageNode('buddy'),confirmed:false};entry.user.box.classList.add('pending');
   const pending={message:text,boot:relay.state.boot_id,baseline:relay.state.id,entry};pendingSend=pending;unconfirmed=pending;scrollConversation();updateControls();
   try{
@@ -197,16 +206,26 @@ function resizeInput(){$('message').style.height='auto';$('message').style.heigh
 function initializeVoice(){
   const Recognition=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
   if(!globalThis.isSecureContext||!Recognition){$('voiceHint').textContent='Type or use keyboard dictation.';return;}
-  voice=new BuddyTalkController({Recognition,
+  voice=new BuddyTalkController({Recognition,reviewFirst:()=>$('reviewVoice').checked,
     canStart:()=>page==='chat'&&relay.status.code==='ready'&&!relay.state?.busy&&!sending&&!$('message').value.trim()&&!document.hidden&&!$('settings').open,
     onText:text=>{$('message').value=text;resizeInput();},
     onState:state=>{
-      const labels={idle:'Hold to talk',requesting:'Allow access',listening:'Listening',captured:'Release to send',finalizing:'Finishing…'};
+      if(state==='requesting'){clearVoiceReview();notice();}
+      const labels={idle:'Hold to talk',requesting:'Starting mic',listening:'Listening',captured:'Stopped early',finalizing:'Finishing…'};
       $('talkLabel').textContent=labels[state];
-      $('voiceHint').textContent=state==='requesting'?'Allow speech access, then hold again.':state==='listening'?'Release when you’re done.':state==='finalizing'?'Preparing your message.':'Hold, speak, release to send.';
+      $('voiceHint').textContent=state==='requesting'?'Wait for Listening before speaking.':state==='listening'?voiceLanguageName()+' · Slide away to cancel.':state==='captured'?'Recognition ended. Release to review.':state==='finalizing'?'Waiting for the final words.':$('reviewVoice').checked?'Hold, speak, release to review.':'Hold, speak, release to send.';
       updateControls();
     },
     onSend:text=>{updateControls();sendMessage(text);},
+    onReview:({reason,alternatives})=>{
+      const messages={unfinished:'The last words weren’t finalized. Check the full sentence before sending.',interrupted:'Recognition stopped before you released. Check for missing words.',length:'Shorten this dictation to fit a message before sending.',uncertain:'The speech service was unsure about some words. Check them before sending.',review:'Edit anything Safari misheard, then press Send.'};
+      $('voiceReviewText').textContent=messages[reason]||messages.review;$('voiceReview').hidden=false;
+      $('voiceChoices').replaceChildren();
+      for(const text of alternatives){const button=document.createElement('button');button.type='button';button.className='voice-choice';button.textContent=text;
+        button.addEventListener('click',()=>{$('message').value=text;resizeInput();updateControls();$('voiceReviewText').textContent='Alternative selected. Check it, then press Send.';});$('voiceChoices').append(button);}
+      $('voiceAlternatives').hidden=!alternatives.length;
+      $('voiceHint').textContent='Dictation kept for review. Nothing sent.';updateControls();
+    },
     onError:text=>{$('voiceHint').textContent=text;updateControls();}
   });bindBuddyTalkButton($('talk'),voice,()=>$('voiceLanguage').value);
 }
@@ -222,7 +241,7 @@ $('conversationNav').addEventListener('click',()=>{$('message').focus();});
 $('closeSettings').addEventListener('click',closeSettings);$('settingsBack').addEventListener('click',()=>openSettings('home'));
 $('settings').addEventListener('click',event=>{if(event.target===$('settings')){const r=$('settings').getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeSettings();}});
 $('messageForm').addEventListener('submit',event=>{event.preventDefault();if(!$('send').disabled)sendMessage($('message').value);});
-$('message').addEventListener('input',()=>{resizeInput();updateControls();});$('message').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();if(!$('send').disabled)sendMessage($('message').value);}});
+$('message').addEventListener('input',()=>{if(!$('message').value.trim())clearVoiceReview();resizeInput();updateControls();});$('message').addEventListener('keydown',event=>{if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();if(!$('send').disabled)sendMessage($('message').value);}});
 for(const element of document.querySelectorAll('[data-prompt]'))element.addEventListener('click',()=>{if(!element.disabled)sendMessage(element.dataset.prompt);});
 $('newConversation').addEventListener('click',async()=>{
   if($('newConversation').disabled)return;sending=true;updateControls();closeSettings();
@@ -240,7 +259,7 @@ $('confirmForget').addEventListener('click',async()=>{
   storageWork=storageWork.catch(()=>{}).then(()=>store.forget());
   try{await storageWork;toast('Saved connection removed.');}catch{toast('Couldn’t remove it. Clear this site’s browser data.');}
 });
-function savePreferences(){try{localStorage.setItem('buddy-preferences',JSON.stringify({language:$('voiceLanguage').value,gentle:$('reduceMotion').checked}));}catch{}document.body.dataset.gentle=String($('reduceMotion').checked);}
+function savePreferences(){try{localStorage.setItem('buddy-preferences',JSON.stringify({language:$('voiceLanguage').value,gentle:$('reduceMotion').checked,reviewVoice:$('reviewVoice').checked}));}catch{}document.body.dataset.gentle=String($('reduceMotion').checked);updateVoicePreference();}
 
 function studyNotice(text=''){$('learningNotice').textContent=text;$('learningNotice').hidden=!text;}
 function refreshStudy(){
@@ -277,8 +296,9 @@ document.addEventListener('keydown',()=>{lastUserActivity=Date.now();});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)chirps.stop();});
 // Offline/older firmware fallback is cosmetic and never sends a command to the device.
 setInterval(()=>{if(document.hidden||relay.status.code!=='ready'||relay.state?.face_expression||relay.state?.busy||voice?.isBusy()||$('settings').open)return;const idle=Date.now()-lastUserActivity;if(idle<30000)return;const mood=idle>=180000?'sleeping':idle>=120000?'sleepy':idle>=45000?'bored':'neutral';$('headerFace').dataset.mood=mood;$('chatFace').dataset.mood=mood;},5000);
-$('voiceLanguage').addEventListener('change',savePreferences);$('reduceMotion').addEventListener('change',savePreferences);
-try{const preferences=JSON.parse(localStorage.getItem('buddy-preferences')||'{}');if(['en-US','fil-PH'].includes(preferences.language))$('voiceLanguage').value=preferences.language;$('reduceMotion').checked=!!preferences.gentle;document.body.dataset.gentle=String(!!preferences.gentle);}catch{}
+$('voiceLanguage').addEventListener('change',savePreferences);$('reduceMotion').addEventListener('change',savePreferences);$('reviewVoice').addEventListener('change',savePreferences);
+try{const preferences=JSON.parse(localStorage.getItem('buddy-preferences')||'{}');if(['en-US','fil-PH'].includes(preferences.language))$('voiceLanguage').value=preferences.language;$('reviewVoice').checked=!!preferences.reviewVoice;$('reduceMotion').checked=!!preferences.gentle;document.body.dataset.gentle=String(!!preferences.gentle);}catch{}
+updateVoicePreference();
 globalThis.addEventListener('popstate',()=>navigate(location.pathname,true));
 globalThis.addEventListener('offline',()=>{if(activeSettings)relay.fail('offline','Your phone is offline.');});
 globalThis.addEventListener('online',()=>{if(activeSettings&&relay.status.code==='offline')retryConnection();});
