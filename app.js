@@ -112,8 +112,12 @@ function messageNode(kind,text=''){
   $('emptyChat').hidden=true;const box=document.createElement('article');box.className='message '+kind;
   const label=document.createElement('span');label.className='message-label';
   if(kind==='user')label.textContent='You';else{const face=document.createElement('span');face.className='brand-face';face.setAttribute('aria-hidden','true');face.append(document.createElement('i'),document.createElement('i'));label.append(face,document.createTextNode('Buddy'));}
-  const body=document.createElement('div');body.className='message-body';body.textContent=text;box.append(label,body);$('conversation').append(box);
-  return{box,body};
+  const body=document.createElement('div');body.className='message-body';body.textContent=text;
+  const status=document.createElement('p');status.className='reply-status';status.hidden=true;
+  const detail=document.createElement('details');detail.className='reply-details';detail.hidden=true;
+  const summary=document.createElement('summary');summary.textContent='Reply details';const reason=document.createElement('p');detail.append(summary,reason);
+  box.append(label,body,status,detail);$('conversation').append(box);
+  return{box,body,status,detail,reason};
 }
 function entryFor(state){
   const key=state.boot_id+':'+state.id;let entry=rows.get(key);
@@ -139,15 +143,23 @@ function renderState(state){
   boot=state.boot_id;if(state.id<accepted)return;
   if(!state.question){if(!pendingSend&&!unconfirmed)clearRows();updateControls();return;}
   const nearBottom=$('conversation').scrollHeight-$('conversation').scrollTop-$('conversation').clientHeight<180;
-  const entry=entryFor(state),text=state.busy?state.draft:state.reply;
+  const entry=entryFor(state);
+  if(state.busy&&state.phase==='tools'&&!state.draft)entry.lastDraft='';
+  if(state.busy&&state.draft)entry.lastDraft=state.draft;
+  const result=buddyReplyStatus(state,state.error?entry.lastDraft||'':'');
+  const text=state.busy?state.draft:result.text;
   const mood=state.busy&&!state.draft?'thinking':state.expression||'neutral';
   entry.buddy.box.dataset.mood=mood;
-  entry.buddy.box.classList.toggle('error',!state.busy&&!!state.error);
+  entry.buddy.box.classList.toggle('error',!state.busy&&result.failed);
+  entry.buddy.status.hidden=state.busy||!result.failed;
+  entry.buddy.status.textContent=result.message;
+  entry.buddy.detail.hidden=state.busy||!result.failed;
+  entry.buddy.reason.textContent='Code: '+result.code+(state.error?' · '+state.error:'');
   if(text){entry.buddy.body.textContent=text;entry.buddy.body.className='message-body';}
   else if(state.busy){
     entry.buddy.body.replaceChildren();const dots=document.createElement('span');dots.className='typing';for(let i=0;i<3;i++)dots.append(document.createElement('i'));
     const label=document.createElement('span');label.textContent=state.phase==='connecting'?'Getting ready':'Thinking';dots.append(label);entry.buddy.body.append(dots);
-  }else entry.buddy.body.textContent=state.error?'Buddy couldn’t finish that reply. Try again in a moment.':'';
+  }else entry.buddy.body.textContent='';
   if(!state.busy&&state.confirmed_actions&&state.error)notice('Already completed: '+state.confirmed_actions+'. Check before retrying.');
   const soundKey=state.boot_id+':'+state.id+':'+(state.busy?'thinking':'reply');
   if(soundKey!==lastSoundKey){lastSoundKey=soundKey;if(!state.busy)lastReplyAt=Date.now();if(!voice?.isBusy()&&!document.hidden&&(state.busy||state.ok!==false))chirps.play(mood);}

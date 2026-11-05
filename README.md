@@ -1,4 +1,4 @@
-# Buddy dashboard · 4.7
+# Buddy dashboard · 4.7.1
 
 A static Vercel dashboard for a personal ESP32 Buddy. Landing, connection and
 chat are separate routes. Settings holds connection details, voice preferences,
@@ -88,3 +88,27 @@ literal-text card rendering, answer reveal and review scheduling as well as
 connection storage and one hold-release submission. A browser check at 390px
 verified topic/card creation, answer reveal and a successful review. A physical
 iPhone, physical OLED nap and amplifier playback remain hardware checks.
+
+## Reply reliability (4.7.1)
+
+Reply failures now show distinct quota, access, working-memory, timeout, network,
+text-length and protocol messages. Reply details exposes the bounded error code,
+not credentials or raw API frames. Text already received remains visible with a
+Partial reply label. For older firmware that clears its failed reply, a draft
+already seen by this tab is retained; reopening the tab cannot recover text the
+old device no longer supplies. Pre-tool filler is cleared instead of preserved.
+
+Firmware 4.7.1 accepts confirmed generation with text even if no PCM arrives,
+handles a close after confirmed generation, and prefers output transcription to
+text-part fallback without duplicating streams or displaying thought parts. It
+still requires generation completion and blocks pending tools, active background
+work and incomplete frames. Incomplete/oversized answers are not stored as good
+conversation history. There is no automatic AI retry or device-action replay.
+
+The broader prompt covers general knowledge, reasoning, relevant follow-ups and
+teaching while keeping replies within the device text budget. An expression tool
+call is optional when useful; ordinary explanations already use a discussing face.
+It does not add training data, unlimited memory or live web access.
+
+`node tests/reply-status.cjs` and the extended app checks cover partial/legacy
+draft preservation, error categories, safe text display and post-tool filler.
