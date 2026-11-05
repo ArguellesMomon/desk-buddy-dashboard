@@ -1,4 +1,4 @@
-# Buddy dashboard · 4.7.1
+# Buddy dashboard · 4.8
 
 A static Vercel dashboard for a personal ESP32 Buddy. Landing, connection and
 chat are separate routes. Settings holds connection details, voice preferences,
@@ -9,7 +9,7 @@ About, FAQs, disconnect and forget. Manrope is self-hosted under its SIL licence
 Vercel preset Other, empty build command, output directory `.`. No environment
 variables or API keys. `vercel.json` supplies route rewrites and security headers.
 Use the stable production URL for saved connections; preview URLs have separate
-browser storage. Existing V4.5 device firmware is compatible; no new flash needed.
+browser storage. Existing V4.5+ firmware remains compatible. New weather/news/calculator features require firmware 4.8.
 
 ## Connection
 
@@ -112,3 +112,35 @@ It does not add training data, unlimited memory or live web access.
 
 `node tests/reply-status.cjs` and the extended app checks cover partial/legacy
 draft preservation, error categories, safe text display and post-tool filler.
+
+## Scoped lookups (4.8 firmware)
+
+The new firmware adds daily Batangas City weather for offsets -7 through +7,
+at most seven days per tool result. Open-Meteo's recent past values are model
+estimates, not verified local-station observations. Date selection uses the
+actual Philippine date supplied by the ESP32. Missing readings and stale caches
+are explicit. Source: https://open-meteo.com/en/docs
+
+Explicit requests for Philippines, world, technology or science news load one
+GMA RSS section before the Gemini connection opens. A single bounded cache holds
+up to three headlines with publication dates and validated source links. It is a
+section feed, not keyword search, full-article access or independent verification.
+Fresh data is reused for five minutes; failures preserve old data with freshness
+metadata. No arbitrary URL or webpage tool is exposed. GMA feeds are listed at
+https://www.gmanetwork.com/news/rss/
+
+Weather/news HTTPS requests finish and release their client before Gemini TLS
+starts; tools read cached records during the AI session. RSS is streamed through
+small fixed fields with a 64 KiB wire limit, rather than allocating the entire
+feed. The dashboard shows only allowlisted HTTPS source links; invalid schemes,
+credentials, ports and lookalike domains are rejected. Source links are rendered
+as text, and visiting them is the user's choice.
+
+A bounded, heap-free numerical calculator handles arithmetic, powers, constants
+and common functions. Explicit `calculate ...` or `calc ...` expressions use no AI
+request. General maths/technical explanations still use Gemini; this is not a
+symbolic proof engine, code execution environment or technical-document search.
+
+Replies default to one or two short sentences (usually 20–45 words) and expand
+when asked for details, steps, examples or a lesson. These changes require 4.8
+firmware. No additional API keys, paid accounts or billing changes are required.

@@ -116,8 +116,9 @@ function messageNode(kind,text=''){
   const status=document.createElement('p');status.className='reply-status';status.hidden=true;
   const detail=document.createElement('details');detail.className='reply-details';detail.hidden=true;
   const summary=document.createElement('summary');summary.textContent='Reply details';const reason=document.createElement('p');detail.append(summary,reason);
-  box.append(label,body,status,detail);$('conversation').append(box);
-  return{box,body,status,detail,reason};
+  const sources=document.createElement('div');sources.className='reply-sources';sources.hidden=true;
+  box.append(label,body,status,detail,sources);$('conversation').append(box);
+  return{box,body,status,detail,reason,sources};
 }
 function entryFor(state){
   const key=state.boot_id+':'+state.id;let entry=rows.get(key);
@@ -155,10 +156,21 @@ function renderState(state){
   entry.buddy.status.textContent=result.message;
   entry.buddy.detail.hidden=state.busy||!result.failed;
   entry.buddy.reason.textContent='Code: '+result.code+(state.error?' · '+state.error:'');
+  const sourceKey=Array.isArray(state.sources)?JSON.stringify(state.sources.slice(0,3)):null;
+  if(sourceKey!==null&&sourceKey!==entry.sourceKey){
+    entry.sourceKey=sourceKey;
+    entry.buddy.sources.replaceChildren();
+    for(const source of state.sources.slice(0,3)){
+      try{if(typeof source?.url!=='string'||source.url.length>225)continue;const url=new URL(source.url);
+        if(url.protocol!=='https:'||url.username||url.password||url.port||!['www.gmanetwork.com','open-meteo.com'].includes(url.hostname))continue;
+        const link=document.createElement('a');link.href=url.href;link.target='_blank';link.rel='noopener noreferrer';link.textContent=typeof source.title==='string'?source.title.slice(0,80):'Source';entry.buddy.sources.append(link);
+      }catch{}
+    }entry.buddy.sources.hidden=!entry.buddy.sources.children.length;
+  }
   if(text){entry.buddy.body.textContent=text;entry.buddy.body.className='message-body';}
   else if(state.busy){
     entry.buddy.body.replaceChildren();const dots=document.createElement('span');dots.className='typing';for(let i=0;i<3;i++)dots.append(document.createElement('i'));
-    const label=document.createElement('span');label.textContent=state.phase==='connecting'?'Getting ready':'Thinking';dots.append(label);entry.buddy.body.append(dots);
+    const label=document.createElement('span');label.textContent=state.phase==='connecting'?'Getting ready':state.phase==='lookup'?'Checking sources':'Thinking';dots.append(label);entry.buddy.body.append(dots);
   }else entry.buddy.body.textContent='';
   if(!state.busy&&state.confirmed_actions&&state.error)notice('Already completed: '+state.confirmed_actions+'. Check before retrying.');
   const soundKey=state.boot_id+':'+state.id+':'+(state.busy?'thinking':'reply');
