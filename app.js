@@ -16,6 +16,7 @@ function updateVoicePreference(){
   $('voiceLanguageShortcut').textContent=voiceLanguageName();
   $('voiceLanguageShortcut').setAttribute('aria-label','Dictation language: '+voiceLanguageName()+'. Change voice settings');
   $('voiceLanguageShortcut').title=$('reviewVoice').checked?'Review dictation before sending':'Send complete dictation on release';
+  if(voice&&!voice.isBusy()&&$('voiceReview').hidden)$('voiceHint').textContent=$('reviewVoice').checked?'Hold, speak, release to review.':'Hold, speak, release to send.';
 }
 function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4000);}
 function navigate(path,replace=false){
@@ -227,7 +228,7 @@ function initializeVoice(){
       $('voiceHint').textContent='Dictation kept for review. Nothing sent.';updateControls();
     },
     onError:text=>{$('voiceHint').textContent=text;updateControls();}
-  });bindBuddyTalkButton($('talk'),voice,()=>$('voiceLanguage').value);
+  });bindBuddyTalkButton($('talk'),voice,()=>$('voiceLanguage').value);updateVoicePreference();
 }
 for(const element of document.querySelectorAll('[data-settings]'))element.addEventListener('click',()=>openSettings(element.dataset.settings));
 for(const element of document.querySelectorAll('[data-nav]'))element.addEventListener('click',event=>{event.preventDefault();if(page==='connect'&&candidate){++connectionTicket;candidate=null;relay.disconnect();}navigate(element.dataset.nav);});
