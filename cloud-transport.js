@@ -51,6 +51,9 @@ class BuddyRelayTransport {
     let client;
     try{client=this.mqtt.connect('wss://'+this.settings.host+':8084/mqtt',{
       username:this.settings.username,password:this.settings.password,clientId:'buddy-phone-'+this.id(),
+      // MQTT.js auto timers create a blob Worker, blocked by our strict CSP.
+      // Native timers work in Safari without weakening the site's security policy.
+      timerVariant:'native',forceNativeWebSocket:true,
       protocolVersion:4,clean:true,keepalive:30,connectTimeout:10000,reconnectPeriod:0,reconnectOnConnackError:false,queueQoSZero:false,
     });}catch{this.networkLost(generation);return;}
     this.client=client;const current=()=>this.client===client&&this.generation===generation;
