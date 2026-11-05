@@ -1,22 +1,16 @@
-.learn-launch{margin-left:auto;padding:6px 10px;font-size:12px;line-height:1.25;max-width:108px;text-align:center}
-.chat-header>.icon-button{flex-shrink:0}
-.reply-status{margin:12px 0 0;font-size:13px;line-height:1.7;color:#865337;white-space:normal}
-.reply-sources{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}.reply-sources a{font-size:12px;line-height:1.5;min-height:44px;display:flex;align-items:center;padding:5px 9px;background:var(--paper);border:1px solid var(--line);border-radius:9px;color:var(--forest);text-decoration:underline;overflow-wrap:anywhere}
-.reply-details{margin-top:10px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}.reply-details summary{min-height:32px;display:flex;align-items:center}.reply-details p{margin-top:8px;line-height:1.6}
-body:has(dialog[open]){overflow:hidden}
-.study-label{display:block;margin:18px 0 8px;font-size:13px;color:var(--ink)}
-.study-input{display:block;width:100%;min-width:0;min-height:46px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:16px;box-sizing:border-box}
-textarea.study-input{resize:vertical}
-.study-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0}
-.study-actions .button{padding:12px 8px;justify-content:center;min-height:46px;font-size:13px}
-.study-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 14px}
-.study-heading h4{font-size:17px}.study-heading span,.review-caption{font-size:12px;color:var(--muted)}
-.review-card{padding:18px;background:var(--card);border:1px solid var(--line);border-radius:17px;overflow-wrap:anywhere}
-#reviewQuestion{font-size:16px;line-height:1.65;margin:12px 0 18px;white-space:pre-wrap}
-#reviewAnswer{font-size:15px;line-height:1.8;margin-top:16px;white-space:pre-wrap;padding-top:14px;border-top:1px solid var(--line)}
-.study-details form>.button{margin-top:16px}.study-details{margin-top:22px}
-#learningNotice{overflow-wrap:anywhere}#exportLearning{margin-top:16px}
-#settings-voice>.button{margin-top:18px}
+/* Review notebook, source citations, and Buddy's visual vocabulary. */
+.reply-status{margin:14px 0 0;font-size:13px;line-height:1.75;color:#8b4b2d}.reply-details{margin-top:10px;font-size:12px;color:var(--muted);overflow-wrap:anywhere}.reply-details summary{min-height:36px;padding-block:8px;cursor:pointer}.reply-details p{margin-top:6px;line-height:1.7}.reply-sources{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}.reply-sources a{font-size:11px;min-height:44px;display:flex;align-items:center;padding:8px 12px;background:var(--paper);border:1px solid var(--line);border-radius:3px;color:var(--blue);text-decoration:underline;overflow-wrap:anywhere}.reply-sources a:before{content:'↗';margin-right:8px}
+.study-label{display:block;margin:21px 0 9px;font-size:13px}.study-input{display:block;width:100%;min-width:0;min-height:48px;padding:12px;border:1px solid #adb3c2;border-radius:4px;background:var(--card);color:var(--ink);font-size:16px}textarea.study-input{resize:vertical}.study-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:16px 0}.study-actions .button{padding:13px 9px;justify-content:center;min-height:48px;font-size:13px}.study-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:28px 0 17px;padding-top:25px;border-top:1px solid var(--ink)}.study-heading h4{font-size:20px;letter-spacing:-.5px;font-weight:500}.study-heading span,.review-caption{font:9px/1.7 var(--mono);color:var(--muted)}.review-card{padding:22px;background:#f0eee4;border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:3px;overflow-wrap:anywhere}#reviewQuestion{font-size:17px;line-height:1.65;margin:15px 0 20px;white-space:pre-wrap}#reviewAnswer{font-size:15px;line-height:1.8;margin-top:20px;white-space:pre-wrap;padding-top:17px;border-top:1px solid var(--line)}.study-details form>.button{margin-top:17px}.study-details{margin-top:24px}#learningNotice{overflow-wrap:anywhere}#exportLearning{margin-top:16px}#settings-voice>.button{margin-top:20px}
+:is(.brand-face[data-mood=thinking],.message[data-mood=thinking] .brand-face) i{animation:tiny-think 1.4s infinite}
+:is(.brand-face[data-mood=happy],.brand-face[data-mood=joking],.message[data-mood=happy] .brand-face,.message[data-mood=joking] .brand-face) i{scale:1 .55;border-radius:5px 5px 1px 1px}
+:is(.brand-face[data-mood=sad],.message[data-mood=sad] .brand-face) i{scale:1 .65;rotate:15deg}
+:is(.brand-face[data-mood=sad],.message[data-mood=sad] .brand-face) i:last-child{rotate:-15deg}
+:is(.brand-face[data-mood=angry],.message[data-mood=angry] .brand-face) i{rotate:-18deg}
+:is(.brand-face[data-mood=angry],.message[data-mood=angry] .brand-face) i:last-child{rotate:18deg}
+:is(.brand-face[data-mood=curious],.message[data-mood=curious] .brand-face) i:last-child{scale:1 .6}
+:is(.brand-face[data-mood=sleepy],.message[data-mood=sleepy] .brand-face) i{scale:1 .2}
+.chat-character[data-mood=thinking] .buddy-eyes i{animation:tiny-think 1.4s infinite}.chat-character:is([data-mood=happy],[data-mood=joking]) .buddy-eyes i{scale:1 .5;border-radius:5px 5px 1px 1px}.chat-character[data-mood=sad] .buddy-eyes i{scale:1 .65;rotate:15deg}.chat-character[data-mood=sad] .buddy-eyes i:last-child{rotate:-15deg}.chat-character[data-mood=angry] .buddy-eyes i{rotate:-18deg}.chat-character[data-mood=angry] .buddy-eyes i:last-child{rotate:18deg}.chat-character[data-mood=curious] .buddy-eyes i:last-child{scale:1 .6}.chat-character[data-mood=sleepy] .buddy-eyes i{scale:1 .2}
+@keyframes tiny-think{0%,100%{translate:0 0;scale:1 1}50%{translate:2px -2px;scale:1 .6}}
 .buddy-eyes i,.brand-face i{transition:height .3s,scale .3s,rotate .3s,translate .3s,border-radius .3s}
 :is(.brand-face[data-mood=bored],.message[data-mood=bored] .brand-face) i{scale:1 .48;animation:lazy-glance 8s infinite}
 .chat-character[data-mood=bored] .buddy-eyes i{height:13px;animation:lazy-glance 8s infinite}
@@ -38,4 +32,3 @@ textarea.study-input{resize:vertical}
 @keyframes lazy-glance{0%,35%,100%{translate:0 0}45%,65%{translate:3px 0}}
 @keyframes sleep-breath{50%{transform:translateY(2px)}}
 @keyframes wake-eyes{from{scale:1 .1}to{scale:1 1}}
-@media(max-width:360px){.learn-launch{font-size:11px;max-width:85px;padding:5px}.chat-header{gap:5px}.chat-brand{gap:8px}}

@@ -19,7 +19,7 @@ function navigate(path,replace=false){
   if(location.pathname!==path)history[replace?'replaceState':'pushState']({},'',path);
   const heading=$(page).querySelector('h1');heading.setAttribute('tabindex','-1');heading.focus({preventScroll:true});
   if(page!=='chat'){document.documentElement.scrollTop=0;document.body.scrollTop=0;}
-  $('getStarted').firstChild.textContent=saved||linked?'Back to your Buddy ':'Meet your Buddy ';
+  $('getStarted').firstChild.textContent=saved||linked?'Return to Buddy ':'Open Buddy ';
   if(page==='chat')scrollConversation();
   updateControls();
 }
@@ -99,7 +99,7 @@ function editConnection(){
 }
 function openSettings(panel='home'){
   voice?.cancel();if(!panels.includes(panel))panel='home';
-  const titles={home:'Your space',about:'About Buddy',faq:'A little help',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection',learning:'Learn together'};
+  const titles={home:'Settings',about:'About Buddy',faq:'Help & FAQs',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection',learning:'Notebook'};
   for(const name of panels)$('settings-'+name).hidden=name!==panel;
   $('settingsTitle').textContent=titles[panel];$('settingsBack').hidden=panel==='home';details();
   if(!$('settings').open)$('settings').showModal();$('settings').scrollTop=0;
@@ -196,14 +196,14 @@ async function sendMessage(text){
 function resizeInput(){$('message').style.height='auto';$('message').style.height=Math.min($('message').scrollHeight,126)+'px';}
 function initializeVoice(){
   const Recognition=globalThis.SpeechRecognition||globalThis.webkitSpeechRecognition;
-  if(!globalThis.isSecureContext||!Recognition){$('voiceHint').textContent='Use keyboard dictation or type a little hello.';return;}
+  if(!globalThis.isSecureContext||!Recognition){$('voiceHint').textContent='Type or use keyboard dictation.';return;}
   voice=new BuddyTalkController({Recognition,
     canStart:()=>page==='chat'&&relay.status.code==='ready'&&!relay.state?.busy&&!sending&&!$('message').value.trim()&&!document.hidden&&!$('settings').open,
     onText:text=>{$('message').value=text;resizeInput();},
     onState:state=>{
-      const labels={idle:'Hold to talk',requesting:'Allow speech access',listening:'Listening — release to send',captured:'Release to send',finalizing:'Finishing your words…'};
+      const labels={idle:'Hold to talk',requesting:'Allow access',listening:'Listening',captured:'Release to send',finalizing:'Finishing…'};
       $('talkLabel').textContent=labels[state];
-      $('voiceHint').textContent=state==='requesting'?'Allow access if asked, then hold again.':state==='listening'?'Take your time. Release when you’re done.':state==='finalizing'?'Just catching the last little bit.':'Hold, speak, release. Buddy’s listening.';
+      $('voiceHint').textContent=state==='requesting'?'Allow speech access, then hold again.':state==='listening'?'Release when you’re done.':state==='finalizing'?'Preparing your message.':'Hold, speak, release to send.';
       updateControls();
     },
     onSend:text=>{updateControls();sendMessage(text);},
@@ -218,6 +218,7 @@ $('connectForm').addEventListener('submit',event=>{event.preventDefault();try{be
 $('showPassword').addEventListener('click',()=>{const show=$('password').type==='password';$('password').type=show?'text':'password';$('showPassword').setAttribute('aria-pressed',String(show));$('showPassword').setAttribute('aria-label',show?'Hide password':'Show password');});
 for(const id of ['connectRetry','retryChat','settingsRetry'])$(id).addEventListener('click',()=>{if(id==='settingsRetry')closeSettings();retryConnection();});
 for(const id of ['editConnection','settingsEdit'])$(id).addEventListener('click',editConnection);
+$('conversationNav').addEventListener('click',()=>{$('message').focus();});
 $('closeSettings').addEventListener('click',closeSettings);$('settingsBack').addEventListener('click',()=>openSettings('home'));
 $('settings').addEventListener('click',event=>{if(event.target===$('settings')){const r=$('settings').getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)closeSettings();}});
 $('messageForm').addEventListener('submit',event=>{event.preventDefault();if(!$('send').disabled)sendMessage($('message').value);});
@@ -225,13 +226,13 @@ $('message').addEventListener('input',()=>{resizeInput();updateControls();});$('
 for(const element of document.querySelectorAll('[data-prompt]'))element.addEventListener('click',()=>{if(!element.disabled)sendMessage(element.dataset.prompt);});
 $('newConversation').addEventListener('click',async()=>{
   if($('newConversation').disabled)return;sending=true;updateControls();closeSettings();
-  try{const response=await relay.request('/api/chat',{clear:true});accepted=response.id;clearRows();notice();relay.sync();toast('A fresh little beginning.');}catch(error){notice(error.message);}finally{sending=false;updateControls();}
+  try{const response=await relay.request('/api/chat',{clear:true});accepted=response.id;clearRows();notice();relay.sync();toast('New conversation started.');}catch(error){notice(error.message);}finally{sending=false;updateControls();}
 });
 $('disconnect').addEventListener('click',()=>{
   ++connectionTicket;candidate=null;relay.disconnect();voice?.cancel();closeSettings();
   if(saved)saved.paused=true;
   storageWork=storageWork.catch(()=>{}).then(()=>store.pause(true));storageWork.catch(()=>toast('Couldn’t pause the saved connection. Use Forget to remove it.'));
-  navigate('/');toast('Disconnected. Come back whenever.');
+  navigate('/');toast('Disconnected. Your saved connection is kept.');
 });
 $('forget').addEventListener('click',()=>openSettings('forget'));
 $('confirmForget').addEventListener('click',async()=>{

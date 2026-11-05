@@ -1,8 +1,33 @@
-# Buddy dashboard · 4.8
+# Buddy dashboard · Web 5.0
 
 A static Vercel dashboard for a personal ESP32 Buddy. Landing, connection and
 chat are separate routes. Settings holds connection details, voice preferences,
-About, FAQs, disconnect and forget. Manrope is self-hosted under its SIL licence.
+About, FAQs, disconnect and forget. Web 5.0 changes the visual experience;
+firmware remains 4.8. No firmware upload is required for this dashboard redesign.
+
+## Design direction
+
+“Good company. Clear thinking.” treats Buddy as a considered desk instrument:
+warm paper (#f3f1e9), ink (#242d3e), cobalt (#3458c8) and an amber face (#f5bd70).
+Open conversation space, ruled sections and a narrow reading column replace the
+previous green theme. Desktop navigation becomes a rail; phone controls stay at
+the top and beside the composer. Connection is a separate task; help and technical
+details remain in Settings. Learning and review are grouped under Notebook.
+
+The geometric SVG wordmark, cut-corner face, icons and CSS device illustration
+are original to this dashboard. There is no stock icon pack, generated hero image
+or external UI framework. Schibsted Grotesk and Azeret Mono are openly licensed
+typefaces, self-hosted as variable WOFF2 files (about 73 KB combined), not custom
+fonts. Licences are in TYPE-LICENSES.txt. Sources:
+https://github.com/google/fonts/tree/main/ofl/schibstedgrotesk and
+https://github.com/google/fonts/tree/main/ofl/azeretmono.
+
+Layout and isolated-browser checks cover 320, 390, 768 and 1366 px, long replies,
+local font loading, Notebook card/review actions and a compact recording state.
+The separate app tests cover encrypted pairing/restore, login errors, safe text
+and source links, partial replies, and hold/release single-send. Simulated QA
+does not send real broker/Gemini/device requests; actual iPhone speech permission
+and mobile-keyboard behaviour still depend on the browser/device.
 
 ## Deployment
 
