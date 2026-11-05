@@ -1,12 +1,14 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const defaults={host:$('host').value,device:$('device').value,username:$('username').value};
-const pages=['landing','connect','chat'],panels=['home','about','faq','connection','voice','forget'];
+const pages=['landing','connect','chat'],panels=['home','about','faq','connection','voice','forget','learning'];
 let page='landing',saved=null,activeSettings=null,candidate=null,connectionTicket=0,storageWork=Promise.resolve(),remembered=false;
 let sending=false,voice=null,boot=null,accepted=0,pendingSend=null,unconfirmed=null,rows=new Map(),toastTimer,linked=false;
 const store=new BuddyConnectionStore();
+const learning=new BuddyLearningLibrary(),chirps=new BuddyChirps();
+let reviewId=null,lastSoundKey='',lastReplyAt=0,lastUserActivity=Date.now();
 const relay=new BuddyRelayTransport({mqtt:globalThis.mqtt,onConnection:updateConnection,ready:()=>{if(relay.state)renderState(relay.state);updateControls();}});
-globalThis.buddyApp={relay,store};
+globalThis.buddyApp={relay,store,learning,chirps};
 function notice(text=''){ $('chatNotice').textContent=text;$('chatNotice').hidden=!text; }
 function toast(text){$('toast').textContent=text;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,4000);}
 function navigate(path,replace=false){
@@ -31,6 +33,9 @@ function updateControls(){
   $('disconnect').disabled=!activeSettings;
   $('forget').disabled=!activeSettings&&!saved&&!remembered;
   for(const button of document.querySelectorAll('[data-prompt]'))button.disabled=!ready||busy||sending||capturing;
+  for(const button of document.querySelectorAll('[data-learn]'))button.disabled=!ready||busy||sending||capturing||!$('learningTopic').value;
+  $('endLesson').disabled=!ready||busy||sending||capturing;
+  if(capturing)chirps.stop();
 }
 const connectionHelp={
   auth_error:['Check your login','Use the buddy-phone credential you created in EMQX.'],
@@ -43,6 +48,7 @@ const connectionHelp={
   buddy_setup:['Buddy is online','Its Gemini chat needs setup on the ESP32.'],
 };
 function updateConnection(status){
+  if(status.code!=='ready')chirps.stop();
   const working=['connecting','finding','reconnecting'].includes(status.code),help=connectionHelp[status.code];
   $('connectionProgress').hidden=!working;$('connectionProgressText').textContent=status.message;
   $('connectButton').disabled=working;$('connectButton').firstChild.textContent=working?'Connecting… ':'Connect to Buddy ';
@@ -93,10 +99,11 @@ function editConnection(){
 }
 function openSettings(panel='home'){
   voice?.cancel();if(!panels.includes(panel))panel='home';
-  const titles={home:'Your space',about:'About Buddy',faq:'A little help',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection'};
+  const titles={home:'Your space',about:'About Buddy',faq:'A little help',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection',learning:'Learn together'};
   for(const name of panels)$('settings-'+name).hidden=name!==panel;
   $('settingsTitle').textContent=titles[panel];$('settingsBack').hidden=panel==='home';details();
   if(!$('settings').open)$('settings').showModal();$('settings').scrollTop=0;
+  if(panel==='learning')refreshStudy();
 }
 function closeSettings(){$('settings').close();}
 function scrollConversation(){const log=$('conversation');log.scrollTop=log.scrollHeight;}
@@ -122,13 +129,19 @@ function entryFor(state){
   return entry;
 }
 function renderState(state){
+  const incomingKey=state.boot_id+':'+state.id+':reply';
+  if(state.question&&!state.busy&&incomingKey!==lastSoundKey)lastReplyAt=Date.now();
+  const liveFace=typeof state.face_expression==='string'?state.face_expression:(state.busy?'thinking':Date.now()-lastReplyAt<30000?state.expression:'neutral');
+  $('headerFace').dataset.mood=liveFace;$('chatFace').dataset.mood=liveFace;
+  chirps.quiet=!!state.quiet;
+  if(chirps.quiet)chirps.stop();
   if(boot!==null&&boot!==state.boot_id){clearRows();accepted=0;notice('Buddy restarted. A fresh little beginning.');}
   boot=state.boot_id;if(state.id<accepted)return;
   if(!state.question){if(!pendingSend&&!unconfirmed)clearRows();updateControls();return;}
   const nearBottom=$('conversation').scrollHeight-$('conversation').scrollTop-$('conversation').clientHeight<180;
   const entry=entryFor(state),text=state.busy?state.draft:state.reply;
   const mood=state.busy&&!state.draft?'thinking':state.expression||'neutral';
-  entry.buddy.box.dataset.mood=mood;$('headerFace').dataset.mood=mood;
+  entry.buddy.box.dataset.mood=mood;
   entry.buddy.box.classList.toggle('error',!state.busy&&!!state.error);
   if(text){entry.buddy.body.textContent=text;entry.buddy.body.className='message-body';}
   else if(state.busy){
@@ -136,14 +149,15 @@ function renderState(state){
     const label=document.createElement('span');label.textContent=state.phase==='connecting'?'Getting ready':'Thinking';dots.append(label);entry.buddy.body.append(dots);
   }else entry.buddy.body.textContent=state.error?'Buddy couldn’t finish that reply. Try again in a moment.':'';
   if(!state.busy&&state.confirmed_actions&&state.error)notice('Already completed: '+state.confirmed_actions+'. Check before retrying.');
-  $('chatFace').dataset.mood=state.busy&&!state.draft?'thinking':state.expression||'neutral';
+  const soundKey=state.boot_id+':'+state.id+':'+(state.busy?'thinking':'reply');
+  if(soundKey!==lastSoundKey){lastSoundKey=soundKey;if(!state.busy)lastReplyAt=Date.now();if(!voice?.isBusy()&&!document.hidden&&(state.busy||state.ok!==false))chirps.play(mood);}
   if(state.busy)$('chatStatusText').textContent=state.draft?'Replying to you':'Thinking it through';
   if(nearBottom||entry.confirmed)scrollConversation();updateControls();
 }
 async function sendMessage(text){
   text=text.trim();if(!text||sending||relay.status.code!=='ready'||relay.state?.busy||accepted>(relay.state?.id??0))return;
   if(new TextEncoder().encode(text).length>400){notice('A little shorter, please — up to 400 bytes.');return;}
-  notice();sending=true;const entry={user:messageNode('user',text),buddy:messageNode('buddy'),confirmed:false};entry.user.box.classList.add('pending');
+  lastUserActivity=Date.now();notice();sending=true;const entry={user:messageNode('user',text),buddy:messageNode('buddy'),confirmed:false};entry.user.box.classList.add('pending');
   const pending={message:text,boot:relay.state.boot_id,baseline:relay.state.id,entry};pendingSend=pending;unconfirmed=pending;scrollConversation();updateControls();
   try{
     const reply=await relay.request('/api/chat',{message:text});accepted=reply.id;
@@ -202,6 +216,42 @@ $('confirmForget').addEventListener('click',async()=>{
   try{await storageWork;toast('Saved connection removed.');}catch{toast('Couldn’t remove it. Clear this site’s browser data.');}
 });
 function savePreferences(){try{localStorage.setItem('buddy-preferences',JSON.stringify({language:$('voiceLanguage').value,gentle:$('reduceMotion').checked}));}catch{}document.body.dataset.gentle=String($('reduceMotion').checked);}
+
+function studyNotice(text=''){$('learningNotice').textContent=text;$('learningNotice').hidden=!text;}
+function refreshStudy(){
+  const selected=$('learningTopic').value;$('learningTopic').replaceChildren();
+  if(!learning.data.topics.length){const option=document.createElement('option');option.value='';option.textContent='Add your first topic below';$('learningTopic').append(option);}
+  for(const topic of learning.data.topics){const option=document.createElement('option');option.value=topic.id;option.textContent=topic.title+' · '+topic.level;$('learningTopic').append(option);}
+  if(learning.data.topics.some(t=>t.id===selected))$('learningTopic').value=selected;
+  const topic=$('learningTopic').value,due=learning.due(topic),card=due[0];reviewId=card?.id??null;
+  $('reviewCount').textContent=due.length+' due';$('reviewCard').hidden=!card;$('reviewEmpty').hidden=!!card;
+  $('reviewAnswer').hidden=true;$('reviewRatings').hidden=true;$('revealAnswer').hidden=false;
+  if(card){$('reviewQuestion').textContent=card.q;$('reviewAnswer').textContent=card.a;$('reviewTopic').textContent=learning.data.topics.find(t=>t.id===card.topic)?.title||'';}
+  $('removeTopic').disabled=!topic;$('useLastReply').disabled=!relay.state?.reply;
+  if(learning.loadError)studyNotice('Study storage is unavailable or unreadable. Existing data is kept; chat still works.');
+  updateControls();
+}
+$('topicForm').addEventListener('submit',event=>{event.preventDefault();try{const id=learning.addTopic($('topicTitle').value,$('topicLevel').value);$('topicTitle').value='';studyNotice('Topic saved. Choose Teach me to begin.');refreshStudy();$('learningTopic').value=id;refreshStudy();}catch(error){studyNotice(error.message||'Couldn’t save this topic.');}});
+$('learningTopic').addEventListener('change',()=>{studyNotice();refreshStudy();});
+for(const button of document.querySelectorAll('[data-learn]'))button.addEventListener('click',()=>{
+  if(button.disabled)return;try{const prompt=learning.prompt($('learningTopic').value,button.dataset.learn);closeSettings();navigate('/chat');sendMessage(prompt);}catch(error){studyNotice(error.message);}
+});
+$('endLesson').addEventListener('click',()=>{if($('endLesson').disabled)return;closeSettings();navigate('/chat');sendMessage('End learning session.');});
+$('revealAnswer').addEventListener('click',()=>{$('reviewAnswer').hidden=false;$('reviewRatings').hidden=false;$('revealAnswer').hidden=true;});
+for(const button of document.querySelectorAll('[data-rate]'))button.addEventListener('click',()=>{if(!reviewId||$('reviewAnswer').hidden)return;try{learning.rate(reviewId,button.dataset.rate);studyNotice('Review saved. See you next time.');refreshStudy();}catch(error){studyNotice('Couldn’t save your review. '+error.message);}});
+$('useLastReply').addEventListener('click',()=>{if(!relay.state?.reply)return;$('cardQuestion').value=relay.state.question.slice(0,300);$('cardAnswer').value=relay.state.reply.slice(0,1800);studyNotice('Edit this into one clear question and check the answer before saving.');});
+$('cardForm').addEventListener('submit',event=>{event.preventDefault();try{learning.addCard($('learningTopic').value,$('cardQuestion').value,$('cardAnswer').value);$('cardQuestion').value='';$('cardAnswer').value='';studyNotice('Card saved on this browser.');refreshStudy();}catch(error){studyNotice('Couldn’t save this card. '+error.message);}});
+$('exportLearning').addEventListener('click',()=>{try{const url=URL.createObjectURL(new Blob([learning.export()],{type:'application/json'})),link=document.createElement('a');link.href=url;link.download='buddy-study-backup.json';document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),10000);}catch{studyNotice('Couldn’t export a backup in this browser.');}});
+$('importLearning').addEventListener('change',async()=>{const file=$('importLearning').files?.[0];if(!file)return;try{if(file.size>300000)throw Error('Study file is too large.');learning.import(await file.text());studyNotice('Backup merged.');refreshStudy();}catch(error){studyNotice('Couldn’t import this backup. '+error.message);}finally{$('importLearning').value='';}});
+$('removeTopic').addEventListener('click',()=>{if(!$('confirmStudyDelete').checked){studyNotice('Tick Confirm removal first. This also removes the topic’s cards.');return;}try{learning.removeTopic($('learningTopic').value);$('confirmStudyDelete').checked=false;studyNotice('Topic and its cards removed.');refreshStudy();}catch(error){studyNotice(error.message);}});
+$('clearLearning').addEventListener('click',()=>{if(!$('confirmStudyDelete').checked){studyNotice('Tick Confirm removal first. Export a backup if you want to keep your library.');return;}try{learning.clear();$('confirmStudyDelete').checked=false;studyNotice('Study library cleared.');refreshStudy();}catch{studyNotice('Couldn’t clear study storage.');}});
+$('chirpsEnabled').addEventListener('change',async()=>{if(!$('chirpsEnabled').checked){chirps.enabled=false;chirps.stop();return;}try{await chirps.enable();if(!$('chirpsEnabled').checked){chirps.enabled=false;return;}chirps.play('happy',true);}catch(error){$('chirpsEnabled').checked=false;toast(error.message);}});
+$('previewChirp').addEventListener('click',async()=>{try{await chirps.enable();$('chirpsEnabled').checked=true;chirps.play('happy',true);}catch(error){toast(error.message);}});
+document.addEventListener('pointerdown',()=>{lastUserActivity=Date.now();},{passive:true});
+document.addEventListener('keydown',()=>{lastUserActivity=Date.now();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)chirps.stop();});
+// Offline/older firmware fallback is cosmetic and never sends a command to the device.
+setInterval(()=>{if(document.hidden||relay.status.code!=='ready'||relay.state?.face_expression||relay.state?.busy||voice?.isBusy()||$('settings').open)return;const idle=Date.now()-lastUserActivity;if(idle<30000)return;const mood=idle>=180000?'sleeping':idle>=120000?'sleepy':idle>=45000?'bored':'neutral';$('headerFace').dataset.mood=mood;$('chatFace').dataset.mood=mood;},5000);
 $('voiceLanguage').addEventListener('change',savePreferences);$('reduceMotion').addEventListener('change',savePreferences);
 try{const preferences=JSON.parse(localStorage.getItem('buddy-preferences')||'{}');if(['en-US','fil-PH'].includes(preferences.language))$('voiceLanguage').value=preferences.language;$('reduceMotion').checked=!!preferences.gentle;document.body.dataset.gentle=String(!!preferences.gentle);}catch{}
 globalThis.addEventListener('popstate',()=>navigate(location.pathname,true));

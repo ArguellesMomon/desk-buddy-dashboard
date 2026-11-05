@@ -1,0 +1,21 @@
+const assert=require('node:assert/strict');
+const {BuddyLearningLibrary:Library}=require('../learning.js');
+const storage={value:null,getItem(){return this.value;},setItem(_key,value){if(this.fail)throw Error('Storage blocked');this.value=value;},removeItem(){this.value=null;}};
+let now=1800000000000;const library=new Library({storage,now:()=>now});
+const topic=library.addTopic('Electricity','beginner');
+for(const mode of ['explain','example','quiz','hint','teachback','deeper']){const prompt=library.prompt(topic,mode);assert(prompt.startsWith('Learning session:'));assert(Buffer.byteLength(prompt)<=400);}
+assert.match(library.prompt(topic,'quiz'),/Do not include its answer/);
+assert.throws(()=>library.addTopic('Too long '.repeat(30),'beginner'));
+assert.throws(()=>library.addTopic('X','bogus'));assert.equal(library.data.topics.length,1);
+const card=library.addCard(topic,'What is current?','Charge flowing per unit time.');
+assert.equal(library.due(topic).length,1);library.rate(card,'again');assert.equal(library.due(topic).length,0);now+=600000;assert.equal(library.due(topic).length,1);
+library.rate(card,'good');assert.equal(library.data.cards[0].due,now+86400000);now+=86400000;library.rate(card,'good');assert.equal(library.data.cards[0].due,now+3*86400000);
+const backup=library.export();const restored=new Library({storage,now:()=>now});assert.equal(restored.data.cards.length,1);
+restored.import(backup);assert.equal(restored.data.cards.length,1,'duplicate import is idempotent');
+storage.fail=true;const before=restored.export();assert.throws(()=>restored.rate(card,'easy'),/Storage blocked/);assert.equal(restored.export(),before,'failed write must not advance a review');storage.fail=false;
+assert.throws(()=>restored.import('{"v":1,"topics":[],"cards":[{"id":"x"}]}'));
+assert.equal(restored.export(),before,'malformed import must not overwrite existing cards');
+const corrupt=new Library({storage:{getItem(){return '{broken';},setItem(){throw Error('must not overwrite');}},now:()=>now});assert(corrupt.loadError);assert.throws(()=>corrupt.addTopic('X','beginner'),/could not be read/);
+restored.removeTopic(topic);assert.equal(restored.data.cards.length,0);restored.import(backup);assert.equal(restored.data.topics.length,1);assert.equal(restored.data.cards.length,1);
+restored.clear();assert.equal(storage.value,null);
+console.log('PASS: bounded teaching prompts, no quiz-answer prompt leakage, review due dates, persistence, import merge/dedup, deletion, corrupt storage and transactional failure recovery.');

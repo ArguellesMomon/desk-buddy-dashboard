@@ -1,0 +1,38 @@
+.learn-launch{margin-left:auto;padding:6px 10px;font-size:12px;line-height:1.25;max-width:108px;text-align:center}
+.chat-header>.icon-button{flex-shrink:0}
+body:has(dialog[open]){overflow:hidden}
+.study-label{display:block;margin:18px 0 8px;font-size:13px;color:var(--ink)}
+.study-input{display:block;width:100%;min-width:0;min-height:46px;padding:12px;border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);font:inherit;font-size:16px;box-sizing:border-box}
+textarea.study-input{resize:vertical}
+.study-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin:14px 0}
+.study-actions .button{padding:12px 8px;justify-content:center;min-height:46px;font-size:13px}
+.study-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:24px 0 14px}
+.study-heading h4{font-size:17px}.study-heading span,.review-caption{font-size:12px;color:var(--muted)}
+.review-card{padding:18px;background:var(--card);border:1px solid var(--line);border-radius:17px;overflow-wrap:anywhere}
+#reviewQuestion{font-size:16px;line-height:1.65;margin:12px 0 18px;white-space:pre-wrap}
+#reviewAnswer{font-size:15px;line-height:1.8;margin-top:16px;white-space:pre-wrap;padding-top:14px;border-top:1px solid var(--line)}
+.study-details form>.button{margin-top:16px}.study-details{margin-top:22px}
+#learningNotice{overflow-wrap:anywhere}#exportLearning{margin-top:16px}
+#settings-voice>.button{margin-top:18px}
+.buddy-eyes i,.brand-face i{transition:height .3s,scale .3s,rotate .3s,translate .3s,border-radius .3s}
+:is(.brand-face[data-mood=bored],.message[data-mood=bored] .brand-face) i{scale:1 .48;animation:lazy-glance 8s infinite}
+.chat-character[data-mood=bored] .buddy-eyes i{height:13px;animation:lazy-glance 8s infinite}
+:is(.brand-face[data-mood=sleeping],.message[data-mood=sleeping] .brand-face) i{scale:1 .1;animation:none}
+.chat-character[data-mood=sleeping] .buddy-eyes i{height:3px;animation:none}
+.chat-character[data-mood=sleeping]{animation:sleep-breath 4s ease-in-out infinite}
+:is(.brand-face[data-mood=gentle],.message[data-mood=gentle] .brand-face) i{scale:1 .65;rotate:5deg}
+.chat-character[data-mood=gentle] .buddy-eyes i{height:18px;transform:rotate(5deg)}
+:is(.brand-face[data-mood=gentle],.message[data-mood=gentle] .brand-face) i:last-child{rotate:-5deg}
+.chat-character[data-mood=gentle] .buddy-eyes i:last-child{transform:rotate(-5deg)}
+:is(.brand-face[data-mood=surprised],.message[data-mood=surprised] .brand-face) i{scale:1.15 1.15;border-radius:50%}
+.chat-character[data-mood=surprised] .buddy-eyes i{height:37px;width:20px;border-radius:50%}
+:is(.brand-face[data-mood=confused],.message[data-mood=confused] .brand-face) i:last-child{scale:1 .5;translate:0 3px}
+.chat-character[data-mood=confused] .buddy-eyes i:last-child{height:16px;transform:translateY(4px)}
+:is(.brand-face[data-mood=proud],.message[data-mood=proud] .brand-face) i{scale:1 .5;border-radius:5px 5px 1px 1px}
+.chat-character[data-mood=proud] .buddy-eyes i{height:12px;border-radius:15px 15px 3px 3px}
+.chat-character[data-mood=yawning] .buddy-eyes i{height:4px}
+.chat-character[data-mood=waking] .buddy-eyes i{animation:wake-eyes 1.6s ease-out both}
+@keyframes lazy-glance{0%,35%,100%{translate:0 0}45%,65%{translate:3px 0}}
+@keyframes sleep-breath{50%{transform:translateY(2px)}}
+@keyframes wake-eyes{from{scale:1 .1}to{scale:1 1}}
+@media(max-width:360px){.learn-launch{font-size:11px;max-width:85px;padding:5px}.chat-header{gap:5px}.chat-brand{gap:8px}}

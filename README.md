@@ -1,4 +1,4 @@
-# Buddy dashboard · 4.6.1
+# Buddy dashboard · 4.7
 
 A static Vercel dashboard for a personal ESP32 Buddy. Landing, connection and
 chat are separate routes. Settings holds connection details, voice preferences,
@@ -54,6 +54,37 @@ a worker constructor denied by policy: default timers reproduce the exception;
 the actual fixed transport reaches ready and still preserves authentication
 refusals. This does not substitute for testing the user's physical iPhone.
 
-Windows Computer Use stopped before visual QA because it could not establish the
-active browser URL. Actual Safari rendering, microphone permission and the user's
-live device login remain to be checked. No claim of a physical end-to-end pass.
+## Personality, sound and learning
+
+Firmware 4.7 reports its current face and quiet-hours state. The dashboard follows
+that face on each state heartbeat, while message avatars retain the reply mood.
+Older firmware remains compatible with a cosmetic browser-only idle fallback.
+Physical OLED idle/nap improvements and the expanded emotion vocabulary require
+flashing 4.7; the dashboard alone cannot change old firmware.
+
+Learn together opens a bounded local library (12 topics, 100 review cards). Six
+explicit learning actions compose normal, visible chat requests within 400 UTF-8
+bytes. They never send automatically or replay on reconnect. Firmware teaching
+guidance asks one question at a time, uses hints, checks reasoning and admits
+uncertainty. This is guided tutoring, not model training or an automatic mastery
+assessment. Chat history still contains only four recent exchanges.
+
+Cards are explicitly saved and self-rated. Review scheduling is a transparent
+increasing 1/3/7/14/30/60-day schedule with 10-minute Again and 1-day Hard; it is
+not an FSRS implementation. No AI is called for saved-card review. Local browser
+storage is not cloud synchronization: export/import merges backups. Failed writes
+do not advance reviews; corrupt stored data is retained and can be exported as-is.
+Study records are ordinary localStorage data, separate from encrypted credentials.
+
+Optional phone robot sounds use original Web Audio chirps, off each visit until
+the user enables them. They respect quiet state, stop on recording/background/
+disconnect and never create an AI request. ESP32 speaker output is a separate,
+disabled-by-default firmware option; the phone setting cannot turn it on. Gemini
+Live still generates native audio; local chirps do not remove provider audio use.
+
+Checks: `node tests/learning.cjs`, `node tests/chirps.cjs`, and
+`node tests/browser-mqtt.cjs`. Extended app regression tests cover study actions,
+literal-text card rendering, answer reveal and review scheduling as well as
+connection storage and one hold-release submission. A browser check at 390px
+verified topic/card creation, answer reveal and a successful review. A physical
+iPhone, physical OLED nap and amplifier playback remain hardware checks.
