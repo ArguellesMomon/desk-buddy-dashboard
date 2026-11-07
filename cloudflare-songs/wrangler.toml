@@ -1,0 +1,17 @@
+name = "buddy-songs"
+main = "src/index.js"
+compatibility_date = "2026-11-07"
+workers_dev = true
+
+[[r2_buckets]]
+binding = "SONGS"
+bucket_name = "buddy-songs"
+
+[vars]
+# Keep this list exact. Do not use a wildcard origin.
+ALLOWED_ORIGIN = "https://desk-buddy-dashboard.vercel.app"
+MAX_TRACKS = "10"
+MAX_TRACK_BYTES = "5242880"
+MAX_TOTAL_BYTES = "52428800"
+# The mutation counter never decreases, even when an upload fails or a track is deleted.
+MAX_LIFETIME_MUTATIONS = "100"

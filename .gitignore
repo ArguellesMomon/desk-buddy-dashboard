@@ -1,0 +1,4 @@
+# Local-only Cloudflare song-service credentials
+**/.buddy-songs-secrets.json
+cloudflare-songs/.dev.vars
+cloudflare-songs/.wrangler/

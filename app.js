@@ -1,7 +1,7 @@
 'use strict';
 const $=id=>document.getElementById(id);
 const defaults={host:$('host').value,device:$('device').value,username:$('username').value};
-const pages=['landing','connect','chat'],panels=['home','about','faq','connection','voice','forget','learning'];
+const pages=['landing','connect','chat'],panels=['home','about','faq','connection','voice','forget','learning','songs'];
 let page='landing',saved=null,activeSettings=null,candidate=null,connectionTicket=0,storageWork=Promise.resolve(),remembered=false;
 let sending=false,voice=null,boot=null,accepted=0,pendingSend=null,unconfirmed=null,rows=new Map(),toastTimer,linked=false;
 const store=new BuddyConnectionStore();
@@ -108,11 +108,12 @@ function editConnection(){
 }
 function openSettings(panel='home'){
   voice?.cancel();if(!panels.includes(panel))panel='home';
-  const titles={home:'Settings',about:'About Buddy',faq:'Help & FAQs',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection',learning:'Notebook'};
+  const titles={home:'Settings',about:'About Buddy',faq:'Help & FAQs',connection:'Connection',voice:'Voice & preferences',forget:'Forget connection',learning:'Notebook',songs:'Song library'};
   for(const name of panels)$('settings-'+name).hidden=name!==panel;
   $('settingsTitle').textContent=titles[panel];$('settingsBack').hidden=panel==='home';details();
   if(!$('settings').open)$('settings').showModal();$('settings').scrollTop=0;
   if(panel==='learning')refreshStudy();
+  if(panel==='songs')BuddySongs.open();
 }
 function closeSettings(){$('settings').close();}
 function scrollConversation(){const log=$('conversation');log.scrollTop=log.scrollHeight;}
